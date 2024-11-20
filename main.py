@@ -1,5 +1,6 @@
 from os import getenv
 from logging import getLogger
+from datetime import datetime
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -14,7 +15,8 @@ logger = getLogger(__name__)
 scheduler.add_job(
     main,
     "interval",
-    hours=task_delay
+    hours=task_delay,
+    next_run_time=datetime.now()
 )
 
 if __name__ == "__main__":
