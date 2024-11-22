@@ -21,6 +21,7 @@ request_time_sleep = int(getenv("REQUEST_TIME_SLEEP"))
 drivers_request_count = int(getenv("DRIVERS_REQUEST_COUNT"))
 bx_category_id = int(getenv("BX_CATEGORY_ID"))
 bx_stage_ids = getenv("BX_STAGE_IDS").split(",")
+min_balance = int(getenv("MIN_BALANCE"))
 
 
 tm = TM(
@@ -51,12 +52,29 @@ def update_contacts_balance(driver_ids,contacts,step=drivers_request_count):
         logger.info("time to sleep")
         time.sleep(request_time_sleep)
 
+
+#   TASKS
+def update_deals():
+    logger.info("START UPDATING DEALS TASK")
+    deals = bx.get_deals(category_id=bx_category_id,stage_id=bx_stage_ids)  # Получение седлок на этапах воронки
+    contact_ids = [deal.contact_id for deal in deals] # получение id контактов
+    contact_ids = list(set(contact_ids)) # удаление повторяющихся id
+    contacts = bx.get_contacts(contact_ids=contact_ids) # получение контактов
+    for contact in contacts:
+        for deal in deals:
+            if deal.contact_id == contact.id:
+                if deal.stage_id == "C9:PREPARATION" and contact.balance < min_balance:
+                    bx.update_deal(deal.id,stage_id="C9:PREPAYMENT_INVOICE")
+                elif deal.stage_id == "C9:PREPAYMENT_INVOICE" and contact.balance > min_balance:
+                    bx.update_deal(id=deal.id,stage_id="C9:PREPARATION")
+    logger.info("UPDATING DEALS TASK FINISHED")
+
 def main():
-    logger.info("START TASK")
+    logger.info("START MAIN TASK")
     deals = bx.get_deals(category_id=bx_category_id,stage_id=bx_stage_ids)  # Получение седлок на этапах воронки
     contact_ids = [deal.contact_id for deal in deals] # получение id контактов
     contact_ids = list(set(contact_ids)) # удаление повторяющихся id
     contacts = bx.get_contacts(contact_ids=contact_ids) # получение контактов
     driver_ids = [contact.tm_id for contact in contacts] # получение id_tm
     update_contacts_balance(driver_ids=driver_ids,contacts=contacts)
-    logger.info("TASK FINISHED")
+    logger.info("MAIN TASK FINISHED")

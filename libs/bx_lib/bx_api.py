@@ -23,11 +23,12 @@ class BX:
                 "filter":{
                     "CATEGORY_ID":category_id,
                     "STAGE_ID":stage_id,
-                    # ">CONTACT_ID": 0
+                    ">CONTACT_ID": 0
                     },
                 "select":[
                     "ID",
-                    "CONTACT_ID"
+                    "CONTACT_ID",
+                    "STAGE_ID"
                     ]
             }
         )
@@ -86,4 +87,16 @@ class BX:
                 }
             }
         )
-        
+    
+    def update_deal(self,id,stage_id):
+        "update deals for Bitrix"
+        logger.info("update deal:{id}".format(id=id))
+        self.bx.callMethod(
+            method="crm.deal.update",
+            params={
+                "id":id,
+                "fields":{
+                    "STAGE_ID":stage_id
+                }
+            }
+        )
